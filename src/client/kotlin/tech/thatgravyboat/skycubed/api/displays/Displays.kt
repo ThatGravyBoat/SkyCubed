@@ -5,6 +5,7 @@ import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.gui.components.PlayerFaceRenderer
 import net.minecraft.client.gui.components.Renderable
 import net.minecraft.client.gui.layouts.LayoutElement
+import net.minecraft.client.gui.screens.inventory.InventoryScreen.renderEntityInInventory
 import net.minecraft.client.renderer.RenderType
 import net.minecraft.locale.Language
 import net.minecraft.network.chat.Component
@@ -12,13 +13,17 @@ import net.minecraft.network.chat.FormattedText
 import net.minecraft.network.chat.MutableComponent
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.util.FormattedCharSequence
+import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.item.ItemStack
+import org.joml.Quaternionf
+import org.joml.Vector3f
 import tech.thatgravyboat.skyblockapi.helpers.McClient
 import tech.thatgravyboat.skyblockapi.helpers.McFont
 import tech.thatgravyboat.skyblockapi.utils.text.Text
 import tech.thatgravyboat.skyblockapi.utils.text.TextProperties.width
 import tech.thatgravyboat.skycubed.utils.fillRect
 import tech.thatgravyboat.skycubed.utils.pushPop
+import kotlin.math.atan
 
 private const val NO_SPLIT = -1
 
@@ -242,12 +247,74 @@ object Displays {
     }
 
     fun <T> renderable(renderable: T, width: Int = -1, height: Int = -1): Display
-        where T: Renderable, T: LayoutElement {
+            where T : Renderable, T : LayoutElement {
         return object : Display {
             override fun getWidth(): Int = if (width == -1) renderable.width else width
             override fun getHeight(): Int = if (height == -1) renderable.height else height
             override fun render(graphics: GuiGraphics) {
                 renderable.render(graphics, -1, -1, 0f)
+            }
+        }
+    }
+
+    fun entity(
+        entity: LivingEntity,
+        with: Int,
+        height: Int,
+        scale: Int,
+        mouseX: Float = -1f,
+        mouseY: Float = -1f,
+        spinning: Boolean = false,
+    ): Display {
+        return object : Display {
+            override fun getWidth() = with
+            override fun getHeight() = height
+            override fun render(graphics: GuiGraphics) {
+                val centerX = with / 2f
+                val centerY = height / 2f
+                val eyesX = mouseX.takeIf { it != -1f } ?: centerX
+                val eyesY = mouseY.takeIf { it != -1f } ?: centerY
+
+                val rotationX = atan((centerX - eyesX) / 40.0).toFloat()
+                val rotationY = atan((centerY - eyesY) / 40.0).toFloat()
+                val baseRotation = Quaternionf().rotateZ(Math.PI.toFloat())
+                val tiltRotation = Quaternionf().rotateX(rotationY * 20.0f * (Math.PI.toFloat() / 180f))
+
+                if (spinning) {
+                    val currentTime = System.currentTimeMillis() % 3600
+                    val spinAngle = (currentTime / 10.0) % 360.0
+                    baseRotation.mul(Quaternionf().rotateY(Math.toRadians(spinAngle).toFloat()))
+                }
+
+                baseRotation.mul(tiltRotation)
+                val originalBodyRotation = entity.yBodyRot
+                val originalYRotation = entity.yRot
+                val originalXRotation = entity.xRot
+                val originalHeadRotationPrev = entity.yHeadRotO
+                val originalHeadRotation = entity.yHeadRot
+                entity.yBodyRot = 180.0f + rotationX * 20.0f
+                entity.yRot = 180.0f + rotationX * 40.0f
+                entity.xRot = -rotationY * 20.0f
+                entity.yHeadRot = entity.yRot
+                entity.yHeadRotO = entity.yRot
+                val entityScale = entity.scale
+                val positionOffset = Vector3f(0.0f, entity.bbHeight / 2.0f * entityScale, 0.0f)
+                val scaledSize = scale / entityScale
+                renderEntityInInventory(
+                    graphics,
+                    centerX,
+                    centerY,
+                    scaledSize,
+                    positionOffset,
+                    baseRotation,
+                    tiltRotation,
+                    entity
+                )
+                entity.yBodyRot = originalBodyRotation
+                entity.yRot = originalYRotation
+                entity.xRot = originalXRotation
+                entity.yHeadRotO = originalHeadRotationPrev
+                entity.yHeadRot = originalHeadRotation
             }
         }
     }
