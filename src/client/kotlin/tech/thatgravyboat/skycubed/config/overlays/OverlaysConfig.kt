@@ -53,6 +53,10 @@ object OverlaysConfig {
     @ConfigEntry(id = "movableHotbar", translation = "config.skycubed.overlays.movableHotbar")
     @Comment("", translation = "config.skycubed.overlays.movableHotbar.desc")
     var movableHotbar = false
+
+    @ConfigEntry(id = "windOverlay", translation = "config.skycubed.overlays.windOverlay")
+    @Comment("", translation = "config.skycubed.overlays.windOverlay.desc")
+    var windOverlay = false
 }
 
 enum class HealthDisplay : Translatable {

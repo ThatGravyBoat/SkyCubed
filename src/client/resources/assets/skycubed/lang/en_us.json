@@ -123,6 +123,9 @@
     "config.skycubed.overlays.movableHotbar": "Movable Hotbar",
     "config.skycubed.overlays.movableHotbar.desc": "Allows you to move the hotbar around the screen.",
 
+    "config.skycubed.overlays.windOverlay": "Wind Overlay",
+    "config.skycubed.overlays.windOverlay.desc": "Displays the wind indicator from the gone with the Wind event on your cursor.",
+
     "//Chat": "",
 
     "config.skycubed.chat.title": "Chat",
